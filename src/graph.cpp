@@ -96,6 +96,7 @@ void CycleRemovalSimulator::Run(int seed) {
   mt19937 rng(seed);
   printf("Simulator: will repeat for %d times.\n", config.repeat);
   int not_inf_count = 0;
+  vector<double> finite_distances;
   for (int round = 0; round < config.repeat; round++) {
     
     auto forest = make_unique<DynamicForest>(graph->n);
@@ -111,6 +112,7 @@ void CycleRemovalSimulator::Run(int seed) {
           not_inf_count ++;
           double not_inf_ratio = not_inf_count / (double)(round + 1);
           printf("round(%d): phi(e) = %d, dist = %d [not-inf-ratio=%.5f]\n", round, i, dist, not_inf_ratio);
+          finite_distances.push_back(dist);
         }
         
         break;
@@ -123,5 +125,7 @@ void CycleRemovalSimulator::Run(int seed) {
     }
   }
   double not_inf_ratio = not_inf_count / (double)(config.repeat);
-  printf("not-inf-ratio = %.5f\n", not_inf_ratio);
+  double finite_avg = accumulate(finite_distances.begin(), finite_distances.end(), 0.0);
+  if (finite_distances.size() > 0) finite_avg /= (double)finite_distances.size();
+  printf("not-inf-ratio = %.5f, finite-avg = %.5f\n", not_inf_ratio, finite_avg);
 }

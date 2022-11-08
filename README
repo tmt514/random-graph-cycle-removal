@@ -1,0 +1,23 @@
+# Experiments to Cycle Decomposition
+
+```
+$ make
+$ make run
+```
+
+## Exp 1: Layered Graphs
+
+```cpp
+int N = 1000;
+vector<int> layers = {1, 99, 100, 100, 100, 100, 100, 100, 100, 100, 99, 1};
+
+Config config;
+config.simulation_type = LAYERED_GRAPH;
+config.layers = layers;
+config.repeat = 1000;
+```
+
+## Results
+
+```
+```
