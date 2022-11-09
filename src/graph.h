@@ -10,6 +10,7 @@ class Config {
   public:
   SimulationType simulation_type;
   int repeat;
+  int allowed_cycle_length;
 
   // used only in LAYERED_GRAPH mode
   vector<int> layers;

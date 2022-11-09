@@ -137,8 +137,10 @@ void CycleRemovalSimulator::Run() {
       }
       if (forest->FindRoot(u) != forest->FindRoot(v)) {
         forest->AddEdge(u, v);
-      } else {
+      } else if (forest->FindDistance(u, v) <= config.allowed_cycle_length) {
         forest->RemovePath(u, v);
+      } else {
+        /* do nothing */
       }
     }
   }
