@@ -26,6 +26,20 @@ void Graph::Init(const vector<int>& layers) {
   AddEdge(0, n-1);
 }
 
+void Graph::Init(int n, double p, mt19937& rng) {
+  assert(0.0 < p && p < 1.0);
+  // must add 0, n-1;
+  this-> n = n;
+  edges->clear();
+  for (int i = 0; i < n; i++)
+    for (int j = i+1; j < n; j++) {
+      if (i == 0 && j == n-1) AddEdge(i, j);
+      else if (uniform_real_distribution<double>(0, 1)(rng) <= p) {
+        AddEdge(i, j);
+      }
+    }
+}
+
 void Graph::PermuteEdges(mt19937& rng) {
   shuffle(edges->begin(), edges->end(), rng);
 }
@@ -86,21 +100,25 @@ int DynamicForest::FindDistance(int x, int y) {
   return -1;
 }
 
-CycleRemovalSimulator::CycleRemovalSimulator(const Config& config) {
+CycleRemovalSimulator::CycleRemovalSimulator(const Config& config, int seed) {
   this->config = config;
   this->graph = make_unique<Graph>();
-  this->graph->Init(config.layers);
+  this->rng = make_shared<mt19937>(seed);
+
+  if (config.simulation_type == LAYERED_GRAPH)
+    this->graph->Init(config.layers);
+  else if (config.simulation_type == GNP)
+    this->graph->Init(config.n, config.p, *rng);
 }
 
-void CycleRemovalSimulator::Run(int seed) {
-  mt19937 rng(seed);
+void CycleRemovalSimulator::Run() {
   printf("Simulator: will repeat for %d times.\n", config.repeat);
   int not_inf_count = 0;
   vector<double> finite_distances;
   for (int round = 0; round < config.repeat; round++) {
     
     auto forest = make_unique<DynamicForest>(graph->n);
-    graph->PermuteEdges(rng);
+    graph->PermuteEdges(*rng);
     // only simulate until the (0, n-1) edge is presented.
     for (int i = 0; i < (int)graph->edges->size(); i++) {
       auto [u, v] = graph->edges->at(i);

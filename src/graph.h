@@ -9,9 +9,15 @@ enum SimulationType {
 class Config {
   public:
   SimulationType simulation_type;
-  vector<int> layers;
-  double p;
   int repeat;
+
+  // used only in LAYERED_GRAPH mode
+  vector<int> layers;
+
+  // used only in GNP mode
+  int n;
+  double p;
+  
 };
 
 class Graph {
@@ -23,7 +29,7 @@ class Graph {
   Graph();
   void Init(const vector<int>& layers);
   void PermuteEdges(mt19937 &rng);
-  // void Init(int n);
+  void Init(int n, double p, mt19937 &rng);
 };
 
 class DynamicForest {
@@ -45,7 +51,8 @@ class CycleRemovalSimulator {
   public:
   Config config;
   unique_ptr<Graph> graph;
+  shared_ptr<mt19937> rng;
 
-  CycleRemovalSimulator(const Config& config);
-  void Run(int seed = 514);
+  CycleRemovalSimulator(const Config& config, int seed = 514);
+  void Run();
 };
