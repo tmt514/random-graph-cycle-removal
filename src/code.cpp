@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
   Config config;
   config.simulation_type = GNP;
   config.n = 1000;
-  config.p = 0.5;
+  config.p = 0.9;
   config.repeat = 1000;
   
   auto simulator = make_unique<CycleRemovalSimulator>(config);
