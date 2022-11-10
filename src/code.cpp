@@ -16,19 +16,20 @@ int main(int argc, char *argv[]) {
   // layers.push_back(1);
 
   Config config;
-  config.simulation_type = LAYERED_GRAPH;
+  config.simulation_type = LAYERED_CONSTANT_DEGREE_GRAPH;
+  config.downdeg = 10;
   config.layers = layers;
   config.repeat = 1000;
-  config.allowed_cycle_length = 20;
+  config.allowed_cycle_length = 10;
 
   // Config config;
   // config.simulation_type = GNP;
   // config.n = 1000;
   // config.p = 0.9;
   // config.repeat = 1000;
-  // config.allowed_cycle_length = 10;
+  // config.allowed_cycle_length = 20;
   
   auto simulator = make_unique<CycleRemovalSimulator>(config);
-  simulator->Run();
+  simulator->RunRandomEliminateEdges(0.5);
   return 0;
 }

@@ -23,6 +23,34 @@ void Graph::Init(const vector<int>& layers) {
       for(int y : node_ids[i])
         AddEdge(x, y);
   }
+  mt19937 rng(514);
+  PermuteEdges(rng);
+  AddEdge(0, n-1);
+}
+
+void Graph::Init(const vector<int>& layers, int downdeg, mt19937& rng) {
+  n = 0;
+  edges->clear();
+  vector<vector<int>> node_ids(layers.size());
+  for(int i=0;i<layers.size();i++) {
+    node_ids[i].resize(layers[i]);
+    iota(node_ids[i].begin(), node_ids[i].end(), n);
+    n += layers[i];
+  }
+  for(int i=1;i<layers.size();i++) {
+    for(int x : node_ids[i-1]) {
+      if (i>1 && node_ids[i].size() > downdeg) {
+        shuffle(node_ids[i].begin(), node_ids[i].end(), rng);
+        for(int j=0;j<downdeg;j++) {
+          AddEdge(x, node_ids[i][j]);
+        }
+      } else {
+        for(int y : node_ids[i])
+          AddEdge(x, y);
+      }
+    }
+  }
+  PermuteEdges(rng);
   AddEdge(0, n-1);
 }
 
@@ -33,11 +61,13 @@ void Graph::Init(int n, double p, mt19937& rng) {
   edges->clear();
   for (int i = 0; i < n; i++)
     for (int j = i+1; j < n; j++) {
-      if (i == 0 && j == n-1) AddEdge(i, j);
+      if (i == 0 && j == n-1) continue;
       else if (uniform_real_distribution<double>(0, 1)(rng) <= p) {
         AddEdge(i, j);
       }
     }
+  PermuteEdges(rng);
+  AddEdge(0, n-1);
 }
 
 void Graph::PermuteEdges(mt19937& rng) {
@@ -94,7 +124,7 @@ void DynamicForest::RemovePath(int x, int y) {
 
 int DynamicForest::FindDistance(int x, int y) {
   BecomeRoot(x);
-  int t = 0;
+  int t = 1;
   while (y != parent[y]) { ++t; y = parent[y]; }
   if (y == x) return t;
   return -1;
@@ -109,9 +139,15 @@ CycleRemovalSimulator::CycleRemovalSimulator(const Config& config, int seed) {
     this->graph->Init(config.layers);
   else if (config.simulation_type == GNP)
     this->graph->Init(config.n, config.p, *rng);
+  else if (config.simulation_type == LAYERED_CONSTANT_DEGREE_GRAPH)
+    this->graph->Init(config.layers, config.downdeg, *rng);
 }
 
 void CycleRemovalSimulator::Run() {
+  RunRandomPermuteEdges();
+}
+
+void CycleRemovalSimulator::RunRandomPermuteEdges() {
   printf("Simulator: will repeat for %d times.\n", config.repeat);
   int not_inf_count = 0;
   vector<double> finite_distances;
@@ -138,6 +174,49 @@ void CycleRemovalSimulator::Run() {
       if (forest->FindRoot(u) != forest->FindRoot(v)) {
         forest->AddEdge(u, v);
       } else if (forest->FindDistance(u, v) <= config.allowed_cycle_length) {
+        forest->RemovePath(u, v);
+      } else {
+        /* do nothing */
+      }
+    }
+  }
+  double not_inf_ratio = not_inf_count / (double)(config.repeat);
+  double finite_avg = accumulate(finite_distances.begin(), finite_distances.end(), 0.0);
+  if (finite_distances.size() > 0) finite_avg /= (double)finite_distances.size();
+  printf("not-inf-ratio = %.5f, finite-avg = %.5f\n", not_inf_ratio, finite_avg);
+}
+
+void CycleRemovalSimulator::RunRandomEliminateEdges(double p) {
+  printf("Simulator: will repeat for %d times.\n", config.repeat);
+  int not_inf_count = 0;
+  vector<double> finite_distances;
+  for (int round = 0; round < config.repeat; round++) {
+    auto forest = make_unique<DynamicForest>(graph->n);
+    int elim_count = 0;
+    // only simulate until the (0, n-1) edge is presented.
+    for (int i = 0; i < (int)graph->edges->size(); i++) {
+      auto [u, v] = graph->edges->at(i);
+      // terminal condition
+      if ((u == 0 && v == graph->n-1) || (u == graph->n-1 && v == 0)) {
+        int dist = forest->FindDistance(u, v);
+        // fprintf(stderr, "round %d: alive_edges %d/%d; dist=%d\n", round, (i-elim_count), i, dist);
+
+        if (dist != -1) {
+          not_inf_count ++;
+          double not_inf_ratio = not_inf_count / (double)(round + 1);
+          printf("round(%d): phi(e) = %d, dist = %d [not-inf-ratio=%.5f]\n", round, i, dist, not_inf_ratio);
+          finite_distances.push_back(dist);
+        }
+        break;
+      }
+
+      // Random Eliminate Edge.
+      if (uniform_real_distribution<double>(0, 1)(*rng) < p) { ++elim_count; continue; }
+
+      if (forest->FindRoot(u) != forest->FindRoot(v)) {
+        forest->AddEdge(u, v);
+      } else if (forest->FindDistance(u, v) <= config.allowed_cycle_length) {
+        // fprintf(stderr, "cycle of len? %d\n", forest->FindDistance(u, v));
         forest->RemovePath(u, v);
       } else {
         /* do nothing */

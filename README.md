@@ -52,3 +52,16 @@ not-inf-ratio = 0.05300, finite-avg = 17.32075
 ```
 not-inf-ratio = 0.06400, finite-avg = 16.23438
 ```
+
+## Exp 3: Random Eliminating Edges with a Fixed Permutation
+
+* add edges according to each layer -> always disconnected.
+
+* shuffle edges randomly then random eliminate w.p. 0.5 ->
+
+```
+n = 1000, L = 10, 10 layers.
+not-inf-ratio = 0.44600, finite-avg = 43.53812
+```
+
+* random layered constant degree graph

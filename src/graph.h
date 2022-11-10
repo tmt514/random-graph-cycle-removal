@@ -4,6 +4,7 @@ using namespace std;
 enum SimulationType {
   GNP,
   LAYERED_GRAPH,
+  LAYERED_CONSTANT_DEGREE_GRAPH,
 };
 
 class Config {
@@ -19,6 +20,8 @@ class Config {
   int n;
   double p;
   
+  // used only in LAYERED_CONSTANT_DEGREE_GRAPH
+  int downdeg;
 };
 
 class Graph {
@@ -31,6 +34,7 @@ class Graph {
   void Init(const vector<int>& layers);
   void PermuteEdges(mt19937 &rng);
   void Init(int n, double p, mt19937 &rng);
+  void Init(const vector<int>& layers, int downdeg, mt19937 &rng);
 };
 
 class DynamicForest {
@@ -56,4 +60,6 @@ class CycleRemovalSimulator {
 
   CycleRemovalSimulator(const Config& config, int seed = 514);
   void Run();
+  void RunRandomPermuteEdges();
+  void RunRandomEliminateEdges(double p = 0.5);
 };
